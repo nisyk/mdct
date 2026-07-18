@@ -17,7 +17,7 @@ class MprisApp(App):
     CSS_PATH = 'style.tcss'
 
 
-
+    # Initialize Widgets
     def __init__(self):
         super().__init__()
         self.client = MprisClient()
@@ -36,7 +36,7 @@ class MprisApp(App):
 
 
 
-
+    # Compose All Widgets
     def compose(self) -> ComposeResult:
         with Vertical(id='main_panel'):
             yield self.song_info
@@ -52,12 +52,13 @@ class MprisApp(App):
                 yield self.btn_next
 
 
-
+    # Update the UI for 1 Hz
     async def on_mount(self):
         await self.update_ui()
 
         self.set_interval(1, self.update_ui)
 
+    # Give the UI info from mpris.py backend
     async def update_ui(self):
         info = await self.client.get_current_info()
 
@@ -80,6 +81,7 @@ class MprisApp(App):
         else:
             self.btn_play.label = "▶"
 
+    # Events Handler
     @on(Button.Pressed, "#btn-prev")
     async def btn_prev(self):
         await self.client.receive_command('b')

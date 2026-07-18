@@ -124,7 +124,7 @@ class MprisClient:
             return self._get_default_info()
 
 
-
+    # Default Info
     @staticmethod
     def _get_default_info():
         return {
