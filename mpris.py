@@ -1,10 +1,14 @@
 import dbus
 import asyncio
+import urllib.request
+from io import BytesIO
+from PIL import Image
 
 class MprisClient:
     def __init__(self):
         self.bus = dbus.SessionBus()
         self.active_player = None
+        self._art_cache = {}
 
 
     # Fetch Media Player session
@@ -78,6 +82,41 @@ class MprisClient:
     async def get_current_info(self):
         return await asyncio.to_thread(self._get_current_info_sync)
 
+    # Fetch Album Art
+
+    @staticmethod
+    def _parse_art_url(metadata):
+        art_url_raw = metadata.get('mpris:artUrl', '')
+
+        art_url_str = str(art_url_raw)
+        if art_url_str.startswith('http'):
+            return art_url_str
+        return None
+
+    async def get_album_art(self, url):
+
+        if not url:
+            return None
+        if url in self._art_cache:
+            return self._art_cache[url]
+
+        try:
+            pil_image = await asyncio.to_thread(self._fetch_image_sync, url)
+            if pil_image:
+                self._art_cache[url] = pil_image
+            return pil_image
+        except Exception as e:
+            print(f"Error fetching album: {e}")
+            return None
+
+    @staticmethod
+    def _fetch_image_sync(url):
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                return Image.open(BytesIO(response.read()))
+        except Exception:
+            return None
 
     # Fetch metadata
     def _get_current_info_sync(self):
@@ -105,6 +144,7 @@ class MprisClient:
                 title = str(metadata.get('xesam:title', 'Unknown Title'))
                 status = str(play_status)
                 length_raw = metadata.get('mpris:length', 0)
+                art_url = self._parse_art_url(metadata)
 
 
                 return {"title": title,
@@ -113,7 +153,8 @@ class MprisClient:
                         "position_str": self._format_time(position_raw),
                         "length_str": self._format_time(length_raw),
                         "position_sec": int(position_raw) // 1000000 if position_raw else 0,
-                        "length_sec": int(length_raw) // 1000000 if length_raw else 0
+                        "length_sec": int(length_raw) // 1000000 if length_raw else 0,
+                        "art_url": art_url
                         }
 
             else:
@@ -134,5 +175,6 @@ class MprisClient:
                     "position_str": "00:00",
                     "length_str": "00:00",
                     "position_sec": 0,
-                    "length_sec": 0
+                    "length_sec": 0,
+                    "art_url": None
                     }

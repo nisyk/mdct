@@ -5,6 +5,11 @@ Screen {
     }
 }
 
+#main_panel {
+    align: center middle;
+    width: 100%;
+}
+
 #track-info, #artist-info {
     width: 100%;
     height: auto;
@@ -21,6 +26,19 @@ Screen {
     margin-bottom: 1;
 }
 
+#art-container {
+    width: 100%;
+    height: auto;
+    align: center middle;
+    margin-bottom: 1;
+}
+
+
+#album_art {
+    width: 31;
+    height: 15;
+
+}
 
 
 #media-control {
@@ -31,7 +49,7 @@ Screen {
 }
 #media-control Button {
     width: auto;
-    min-width: 8;
+    min-width: 6;
     margin-left: 1;
     margin-right: 1;
 
@@ -39,7 +57,7 @@ Screen {
 
 #media-control #btn-play {
     width: auto;
-    min-width: 12;
+    min-width: 10;
 
 }
 
@@ -56,7 +74,3 @@ Screen {
 #track-progress {
     opacity: 50%
 }
-
-
-
-

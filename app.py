@@ -1,6 +1,8 @@
+import argparse
 from textual.app import App, ComposeResult
-from textual.widgets import Button, ProgressBar, Label
+from textual.widgets import Button, ProgressBar, Label, Footer
 from textual.containers import Horizontal, Vertical
+from textual_image.widget import Image
 from textual import on
 
 from mpris import MprisClient
@@ -18,10 +20,11 @@ class MprisApp(App):
 
 
     # Initialize Widgets
-    def __init__(self):
+    def __init__(self, fullscreen: bool = False):
         super().__init__()
         self.client = MprisClient()
         self.theme = 'gruvbox'
+        self.is_fullscreen = fullscreen
 
         self.song_info = Label("Loading...", id='track-info')
         self.artist_info = Label(" ", id='artist-info')
@@ -33,12 +36,21 @@ class MprisApp(App):
         self.btn_seek_prev = Button("<<", id="btn-seek-prev")
         self.btn_seek_next = Button(">>", id="btn-seek-next")
 
+        if self.is_fullscreen:
+            self.album_art = Image(id='album_art')
+            self.last_art_url = None
+
 
 
 
     # Compose All Widgets
     def compose(self) -> ComposeResult:
         with Vertical(id='main_panel'):
+            if self.is_fullscreen:
+                with Horizontal(id='art-container'):
+                    yield self.album_art
+                yield Footer()
+
             yield self.song_info
             yield self.artist_info
             with Vertical(id='progress'):
@@ -67,9 +79,28 @@ class MprisApp(App):
             self.artist_info.update(" ")
             self.progressbar.update(total=100, progress=0)
             self.btn_play.label = "▶"
+            if self.is_fullscreen:
+                self.album_art.image = None
+                self.last_art_url = None
         else:
             self.song_info.update(f"{info['title']}")
             self.artist_info.update(f"{info['artist']}")
+
+            if self.is_fullscreen:
+                art_url = info.get('art_url')
+
+                if art_url and art_url != self.last_art_url:
+                    pil_image = await self.client.get_album_art(art_url)
+
+                    if pil_image:
+                        self.album_art.image = pil_image
+                        self.last_art_url = art_url
+                    else:
+                        self.album_art.image = None
+                        self.last_art_url = None
+                elif not art_url:
+                    self.album_art.image = None
+                    self.last_art_url = None
 
         if info['length_sec'] > 0:
             self.progressbar.update(total=info['length_sec'], progress=info['position_sec'])
@@ -126,5 +157,10 @@ class MprisApp(App):
 
 
 if __name__ == "__main__":
-    app = MprisApp()
-    app.run(inline=True)
+    parser = argparse.ArgumentParser(description='TUI Media Control')
+    parser.add_argument("-f", "--full", action="store_true", help="show full screen")
+    args = parser.parse_args()
+
+    app = MprisApp(fullscreen=args.full)
+    app.run(inline=not args.full)
+
