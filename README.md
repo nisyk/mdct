@@ -1,5 +1,5 @@
 # mediacontrol-tui
-A Textual-based Media Control with integration of MPRIS.
+A Textual-TUI-based Media Control with integration of MPRIS. Used in Terminal such as Kitty, KDE Konsole.
 
 ![Demo](assets/screenshot1.png)
 
