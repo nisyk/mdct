@@ -108,7 +108,7 @@ mkdir -p "$HOME/.local/bin"
 ln -sf "$INSTALL_DIR/dist/mdct" "$HOME/.local/bin/mdct"
 
 # Make uninstaller
-cat > "$INSTALL_DIR/mdct-uninstall" << 'EOF'
+cat > "$INSTALL_DIR/uninstall.sh" << 'EOF'
 #!/bin/bash
 green='\033[0;32m'
 yellow='\033[0;33m'
@@ -119,12 +119,11 @@ rm -rf "$HOME/.local/share/mdct"
 rm -f "$HOME/.local/bin/mdct"
 echo -e "${green}MDCT uninstalled.${normal}"
 EOF
-chmod +x "$INSTALL_DIR/mdct-uninstall"
+chmod +x "$INSTALL_DIR/uninstall.sh"
 
 
 if command -v mdct &> /dev/null; then
     echo -e "${green}Installation completed! Run mdct.${normal}"
-    echo -e "To uninstall this program. Run: mdct-uninstall"
 
 else
 
