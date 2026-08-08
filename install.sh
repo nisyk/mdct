@@ -107,9 +107,24 @@ pyinstaller --onefile --name mdct app.py
 mkdir -p "$HOME/.local/bin"
 ln -sf "$INSTALL_DIR/dist/mdct" "$HOME/.local/bin/mdct"
 
+# Make uninstaller
+cat > "$INSTALL_DIR/mdct-uninstall" << 'EOF'
+#!/bin/bash
+green='\033[0;32m'
+yellow='\033[0;33m'
+normal='\033[0m'
+
+echo -e "${yellow}Uninstalling MDCT...${normal}"
+rm -rf "$HOME/.local/share/mdct"
+rm -f "$HOME/.local/bin/mdct"
+echo -e "${green}MDCT uninstalled.${normal}"
+EOF
+chmod +x "$INSTALL_DIR/mdct-uninstall"
+
 
 if command -v mdct &> /dev/null; then
     echo -e "${green}Installation completed! Run mdct.${normal}"
+    echo -e "To uninstall this program. Run: mdct-uninstall"
 
 else
 
