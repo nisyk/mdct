@@ -13,3 +13,12 @@ This project is based from Python with Textual TUI API to synchronize song metad
 - Album art: Gives rendered album art with PIL and TGP/Sixel protocols. (needs Terminal which supported one of both protocols, like Kitty, Konsole).
 - Lightweight: Use fewer resources than Electron UI.
 - Interactive buttons: Play, seek, skip, and prev buttons to gave command to music player.
+
+## Installation
+
+Run this command:
+
+```bash
+chmod +x install.sh
+./install.sh
+```
