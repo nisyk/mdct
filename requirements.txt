@@ -1,4 +1,3 @@
-dbus-python
-Pillow
 textual
 textual-image
+Pillow
