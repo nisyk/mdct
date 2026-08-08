@@ -7,16 +7,97 @@ from textual import on
 
 from mpris import MprisClient
 
-class MprisApp(App):
+class MDCT(App):
 
     BINDINGS = [
         ("space", "bind_play_pause", "Play/Pause"),
         ("n", "bind_next", "Next"),
         ("b", "bind_prev", "Previous"),
         ("q", "quit", "Quit"),
+        ("l", "bind_seek_plus", "Seek+"),
+        ("h", "bind_seek_min", "Seek-"),
     ]
 
-    CSS_PATH = 'style.tcss'
+    CSS = """
+
+    Screen {
+        &:inline {
+            border: none;
+            height: 12;
+        }
+    }
+
+    #main_panel {
+        align: center middle;
+        width: 100%;
+    }
+
+    #track-info, #artist-info {
+        width: 100%;
+        height: auto;
+        text-align: center;
+    }
+
+    #track-info {
+        margin-top: 1;
+        color: $primary;
+        text-style: bold;
+    }
+
+    #artist-info {
+        margin-bottom: 1;
+    }
+
+    #art-container {
+        width: 100%;
+        height: auto;
+        align: center middle;
+        margin-bottom: 1;
+    }
+
+
+    #album_art {
+        width: 31;
+        height: auto;
+
+    }
+
+
+    #media-control {
+        width: 100%;
+        height: auto;
+        align: center middle;
+        margin: 1 2;
+    }
+    #media-control Button {
+        width: auto;
+        min-width: 6;
+        margin-left: 1;
+        margin-right: 1;
+
+    }
+
+    #media-control #btn-play {
+        width: auto;
+        min-width: 10;
+
+    }
+
+    #progress Bar > .bar--bar {
+        color: $success;
+        background: $success 30%;
+    }
+    #progress {
+        width: 100%;
+        height: auto;
+        align: center middle;
+    }
+
+    #track-progress {
+        opacity: 50%
+    }
+
+    """
 
 
     # Initialize Widgets
@@ -150,6 +231,14 @@ class MprisApp(App):
         await self.client.receive_command('n')
         await self.update_ui()
 
+    async def action_bind_seek_min(self) -> None:
+        await self.client.seek_relative(-10)
+        await self.update_ui()
+
+    async def action_bind_seek_plus(self) -> None:
+        await self.client.seek_relative(10)
+        await self.update_ui()
+
     async def action_quit(self) -> None:
         self.exit()
 
@@ -161,6 +250,5 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--full", action="store_true", help="show full screen")
     args = parser.parse_args()
 
-    app = MprisApp(fullscreen=args.full)
+    app = MDCT(fullscreen=args.full)
     app.run(inline=not args.full)
-
