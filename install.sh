@@ -65,6 +65,21 @@ if ! python3 -m venv --help &> /dev/null; then
 fi
 
 
+if ! python3 -c "import dbus" &>/dev/null; then
+    echo -e "${red}ERROR: python3-dbus is not installed.${normal}"
+
+    if grep -qi "ubuntu\|debian" /etc/os-release 2>/dev/null; then
+        echo -e "${yellow}Run: sudo apt install python3-dbus${normal}"
+    elif grep -qi "fedora\|rhel\|centos" /etc/os-release 2>/dev/null; then
+        echo -e "${yellow}Run: sudo dnf install python3-dbus${normal}"
+    elif grep -qi "arch\|manjaro\|cachyos" /etc/os-release 2>/dev/null; then
+        echo -e "${yellow}Run: sudo pacman -S python-dbus${normal}"
+    fi
+
+    exit 1
+fi
+
+
 if [[ -d "$INSTALL_DIR/.git" ]]; then
     echo -e "${yellow}Existing install found, updating...${normal}"
     git -C "$INSTALL_DIR" pull --ff-only
@@ -73,9 +88,11 @@ else
     git clone https://github.com/nisyk/mediacontrol-tui.git "$INSTALL_DIR"
 
 fi
+
+
 cd "$INSTALL_DIR"
 
-python3 -m venv venv
+python3 -m venv --system-site-packages venv
 
 set +u
 source venv/bin/activate
