@@ -104,7 +104,6 @@ class MDCT(App):
     def __init__(self, fullscreen: bool = False):
         super().__init__()
         self.client = MprisClient()
-        self.theme = 'gruvbox'
         self.is_fullscreen = fullscreen
 
         self.song_info = Label("Loading...", id='track-info')
