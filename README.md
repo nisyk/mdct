@@ -26,11 +26,25 @@ chmod +x install.sh
 After the installation completed, run this command:
 
 ```bash
+mdct -v
+```
+
+## Usage
+
+Run this command:
+
+```bash
 mdct
 ```
+
 
 If you want with album art image content, run this command:
 
 ```bash
 mdct -f
 ```
+```bash
+mdct --full
+```
+
+> Note: You need terminal with TGP/Sixel protocol support to make album art visible, TGP protocol is reccomended (kitty, Konsole).
