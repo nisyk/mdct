@@ -22,3 +22,15 @@ Run this command:
 chmod +x install.sh
 ./install.sh
 ```
+
+After the installation completed, run this command:
+
+```bash
+mdct
+```
+
+If you want with album art image content, run this command:
+
+```bash
+mdct -f
+```

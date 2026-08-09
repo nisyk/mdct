@@ -7,6 +7,8 @@ from textual import on
 
 from mpris import MprisClient
 
+__version__ = "1.0.0"
+
 class MDCT(App):
 
     BINDINGS = [
@@ -245,9 +247,12 @@ class MDCT(App):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='TUI Media Control')
+    parser = argparse.ArgumentParser(prog="mdct", description='TUI Media Control')
     parser.add_argument("-f", "--full", action="store_true", help="show full screen")
+    parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
+
     args = parser.parse_args()
+
 
     app = MDCT(fullscreen=args.full)
     app.run(inline=not args.full)
