@@ -6,13 +6,21 @@ A Textual-TUI-based Media Control with integration of MPRIS. Used in Terminal su
 ![Demo Full Screen](assets/screenshot2.png)
 
 ## Overview 
-This project is based from Python with Textual TUI API to synchronize song metadatas from music player (such as: YouTube Music, Spotify, VLC, etc.) with integration of MPRIS dbus in Linux.
+mdct is based from Python with Textual TUI API to synchronize song metadatas from music player (such as: YouTube Music, Spotify, VLC, etc.) with integration of MPRIS dbus in Linux.
 
 ## Features
+- Run on Terminal: Can run on anywhere, as long it has terminal (e.g. Visual Studio Code, PyCharm, Zed, etc.)
 - Real-time sync: Sync metadatas such as artist, song title, album art, progress bar.
 - Album art: Gives rendered album art with PIL and TGP/Sixel protocols. (needs Terminal which supported one of both protocols, like Kitty, Konsole).
 - Lightweight: Use fewer resources than Electron UI.
-- Interactive buttons: Play, seek, skip, and prev buttons to gave command to music player.
+- Interactive buttons: Play, seek, skip, and previous buttons to gave command to music player.
+
+## Requirements
+- A mainstream Linux distro (A distro with Cinnamon, GNOME, KDE, XFCE, Hyprland, Niri probably should work)
+	e.g: Ubuntu, Linux Mint, Debian, Fedora, Bazzite, CachyOS, etc.
+- Python 3.10 or later with python3-dbus.
+- Terminal with touch support.
+- Terminal with TGP/Sixel protocol if want `--full` interface with album art.
 
 ## Installation
 
@@ -48,3 +56,15 @@ mdct --full
 ```
 
 > Note: You need terminal with TGP/Sixel protocol support to make album art visible, TGP protocol is reccomended (kitty, Konsole). For more information, please check: https://github.com/lnqs/textual-image
+
+## Keybindings
+
+| Key     | Function          |
+| ------- | ----------------- |
+| SPACE   | Play/pause toggle |
+| n       | Next song         |
+| b       | Previous song     |
+| h       | Seek prev 10 secs |
+| l       | Seek next 10 secs |
+| q       | Quit application  |
+| SHIFT+p | Textual menu      |
