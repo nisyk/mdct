@@ -55,7 +55,7 @@ mdct -f
 mdct --full
 ```
 
-> Note: You need terminal with KGP (Kitty Graphics Protocol)/Sixel protocol support to make album art visible, TGP protocol is reccomended (kitty, Konsole). For more information, please check: https://github.com/lnqs/textual-image (in this repo, KGP mentioned as TGP).
+> Note: You need terminal with KGP (Kitty Graphics Protocol)/Sixel protocol support to make album art visible, KGP protocol is reccomended (kitty, Konsole). For more information, please check: https://github.com/lnqs/textual-image (in this repo, KGP mentioned as TGP).
 
 ## Keybindings
 
