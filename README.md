@@ -68,3 +68,7 @@ mdct --full
 | l       | Seek next 10 secs |
 | q       | Quit application  |
 | SHIFT+p | Textual menu      |
+
+
+---
+Made with curious by 🌆 **NISY**
