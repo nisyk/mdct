@@ -1,7 +1,7 @@
 #!/bin/bash
 # mdct-installer.sh v1.0.0
 
-set -euo pipefail
+set -eu
 
 green='\033[0;32m'
 red='\033[0;31m'

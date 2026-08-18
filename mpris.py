@@ -1,4 +1,5 @@
 import dbus
+from urllib.parse import urlparse
 import asyncio
 import urllib.request
 from io import BytesIO
@@ -89,8 +90,9 @@ class MprisClient:
         art_url_raw = metadata.get('mpris:artUrl', '')
 
         art_url_str = str(art_url_raw)
-        if art_url_str.startswith('http'):
+        if art_url_str.startswith('http') or art_url_str.startswith('file'):
             return art_url_str
+
         return None
 
     async def get_album_art(self, url):
@@ -103,6 +105,8 @@ class MprisClient:
         try:
             pil_image = await asyncio.to_thread(self._fetch_image_sync, url)
             if pil_image:
+                if len(self._art_cache) >= 24:
+                    self._art_cache.clear()
                 self._art_cache[url] = pil_image
             return pil_image
         except Exception as e:
@@ -112,9 +116,15 @@ class MprisClient:
     @staticmethod
     def _fetch_image_sync(url):
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=5) as response:
-                return Image.open(BytesIO(response.read()))
+            if url.startswith('file'):
+                local_path = urllib.request.url2pathname(urlparse(url).path)
+                with open(local_path, 'rb') as f:
+                    return Image.open(BytesIO(f.read()))
+
+            else:
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    return Image.open(BytesIO(response.read()))
         except Exception:
             return None
 
