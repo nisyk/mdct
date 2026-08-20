@@ -1,4 +1,5 @@
 import dbus
+import logging
 import asyncio
 import urllib.request
 from urllib.parse import urlparse
@@ -51,7 +52,7 @@ class MprisClient:
         except dbus.exceptions.DBusException:
             self._reset_player()
         except Exception as e:
-            print(f"Error command: {e}")
+            logging.error(f"Error command: {e}")
 
     # Seek Control
     async def seek_relative(self, offset_seconds):
@@ -68,7 +69,7 @@ class MprisClient:
         except dbus.exceptions.DBusException:
                 self._reset_player()
         except Exception as e:
-                print(f"Error: {e}")
+                logging.error(f"Error: {e}")
 
     # Format Time
     @staticmethod
@@ -109,7 +110,7 @@ class MprisClient:
                     self._art_cache.clear()
             return pil_image
         except Exception as e:
-            print(f"Error fetching album: {e}")
+            logging.error(f"Error fetching album: {e}")
             return None
 
     @staticmethod
@@ -124,8 +125,8 @@ class MprisClient:
                 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
                 with urllib.request.urlopen(req, timeout=5) as response:
                     return Image.open(BytesIO(response.read()))
-        except Exception:
-            return None
+        except Exception as e:
+            logging.error(f"Error requesting image: {e} | {url}")
 
     # Fetch metadata
     def _get_current_info_sync(self):
