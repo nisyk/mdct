@@ -2,8 +2,9 @@ import argparse
 from textual.app import App, ComposeResult
 from textual.widgets import Button, ProgressBar, Label, Footer
 from textual.containers import Horizontal, Vertical
-from textual_image.widget import Image
 from textual import on
+
+from textual_image.widget import Image
 
 from mpris import MprisClient
 
@@ -34,10 +35,18 @@ class MDCT(App):
         width: 100%;
     }
 
-    #track-info, #artist-info {
+    #player-id-info, #track-info, #artist-info {
         width: 100%;
         height: auto;
         text-align: center;
+    }
+    
+    #player-id-info {
+        padding-bottom: 1;
+        text-style: reverse;
+        &:inline {
+            padding-bottom: 0;
+        }
     }
 
     #track-info {
@@ -98,6 +107,8 @@ class MDCT(App):
     #track-progress {
         opacity: 50%
     }
+    
+
 
     """
 
@@ -108,6 +119,7 @@ class MDCT(App):
         self.client = MprisClient()
         self.is_fullscreen = fullscreen
 
+        self.player_id_info = Label("mdct", id='player-id-info')
         self.song_info = Label("Loading...", id='track-info')
         self.artist_info = Label(" ", id='artist-info')
         self.track_progress = Label("00:00 / 00:00", id='track-progress')
@@ -128,6 +140,7 @@ class MDCT(App):
     # Compose All Widgets
     def compose(self) -> ComposeResult:
         with Vertical(id='main_panel'):
+            yield self.player_id_info
             if self.is_fullscreen:
                 with Horizontal(id='art-container'):
                     yield self.album_art
@@ -157,16 +170,41 @@ class MDCT(App):
         info = await self.client.get_current_info()
 
         if info['status'] == "Offline":
+
             self.song_info.update("There's no currently running...")
             self.artist_info.update(" ")
             self.progressbar.update(total=100, progress=0)
             self.btn_play.label = "▶"
+
+            self.player_id_info.update("Offline")
+            self.player_id_info.styles.color = None
+            self.player_id_info.styles.opacity = 0.6
+            self.player_id_info.styles.text_style = 'none'
             if self.is_fullscreen:
                 self.album_art.image = None
                 self.last_art_url = None
         else:
+
             self.song_info.update(f"{info['title']}")
             self.artist_info.update(f"{info['artist']}")
+
+            self.player_id_info.update(f" {info['player_id']} ")
+            self.player_id_info.styles.opacity = None
+            self.player_id_info.styles.color = None
+            self.player_id_info.styles.text_style = None
+
+            if info['player_id'] == "YouTube Music":
+                self.player_id_info.styles.color = '#EE2D38'
+
+            if info['player_id'] == "Spotify":
+                self.player_id_info.styles.color = '#1ED760'
+
+            if info['player_id'] == "Strawberry":
+                self.player_id_info.styles.color = '#F42C5D'
+
+            if info['player_id'] == "Audacious":
+                self.player_id_info.styles.color = '#6495ED'
+
 
             if self.is_fullscreen:
                 art_url = info.get('art_url')

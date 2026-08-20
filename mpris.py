@@ -1,6 +1,7 @@
 import dbus
 import asyncio
 import urllib.request
+from urllib.parse import urlparse
 from io import BytesIO
 from PIL import Image
 
@@ -89,8 +90,9 @@ class MprisClient:
         art_url_raw = metadata.get('mpris:artUrl', '')
 
         art_url_str = str(art_url_raw)
-        if art_url_str.startswith('http'):
+        if art_url_str.startswith('http') or art_url_str.startswith('file'):
             return art_url_str
+
         return None
 
     async def get_album_art(self, url):
@@ -103,7 +105,8 @@ class MprisClient:
         try:
             pil_image = await asyncio.to_thread(self._fetch_image_sync, url)
             if pil_image:
-                self._art_cache[url] = pil_image
+                if len(self._art_cache) >= 24:
+                    self._art_cache.clear()
             return pil_image
         except Exception as e:
             print(f"Error fetching album: {e}")
@@ -112,9 +115,15 @@ class MprisClient:
     @staticmethod
     def _fetch_image_sync(url):
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=5) as response:
-                return Image.open(BytesIO(response.read()))
+            if url.startswith('file'):
+                local_path = urllib.request.url2pathname(urlparse(url).path)
+                with open(local_path, 'rb') as f:
+                    return Image.open(BytesIO(f.read()))
+
+            else:
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    return Image.open(BytesIO(response.read()))
         except Exception:
             return None
 
@@ -127,6 +136,7 @@ class MprisClient:
                 player_props = dbus.Interface(player_obj, 'org.freedesktop.DBus.Properties')
                 metadata = player_props.Get("org.mpris.MediaPlayer2.Player", "Metadata")
                 play_status = player_props.Get("org.mpris.MediaPlayer2.Player", "PlaybackStatus")
+                player_id = player_props.Get("org.mpris.MediaPlayer2", "Identity")
 
                 artist_raw = metadata.get('xesam:artist', [])
                 if isinstance(artist_raw, (list, dbus.Array)) and len(artist_raw) > 0:
@@ -154,7 +164,8 @@ class MprisClient:
                         "length_str": self._format_time(length_raw),
                         "position_sec": int(position_raw) // 1000000 if position_raw else 0,
                         "length_sec": int(length_raw) // 1000000 if length_raw else 0,
-                        "art_url": art_url
+                        "art_url": art_url,
+                        "player_id": player_id,
                         }
 
             else:
@@ -176,5 +187,6 @@ class MprisClient:
                     "length_str": "00:00",
                     "position_sec": 0,
                     "length_sec": 0,
-                    "art_url": None
+                    "art_url": None,
+                    "player_id": None
                     }
