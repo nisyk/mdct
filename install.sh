@@ -1,5 +1,5 @@
 #!/bin/bash
-# mdct-installer.sh v0.1.0
+# mdct-installer.sh v0.1.1
 
 set -eu
 
