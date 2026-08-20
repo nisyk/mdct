@@ -1,5 +1,5 @@
 #!/bin/bash
-# mdct-installer.sh v1.0.0
+# mdct-installer.sh v0.1.0
 
 set -eu
 
@@ -9,8 +9,11 @@ normal='\033[0m'
 yellow='\033[0;33m'
 
 INSTALL_DIR="$HOME/.local/share/mdct"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FRESH_INSTALL=false
 
+
+# Removes the installation if error occurred
 cleanup() {
     status=$?
     echo -e "${red}Installation failed with error status $status ${normal}"
@@ -22,9 +25,10 @@ cleanup() {
 trap cleanup ERR
 
 
+
 echo -e "Installing MDCT..."
 
-
+# Checking dependencies
 if ! command -v python3 &> /dev/null; then
     echo -e "${red}ERROR: Python3 isn't installed.${normal}"
 
@@ -79,48 +83,39 @@ if ! python3 -c "import dbus" &>/dev/null; then
     exit 1
 fi
 
+# Checking if the installation directory is installed
+if [[ -d "$INSTALL_DIR" ]]; then
+  echo -e "${yellow}Existing install found, updating...${normal}"
+  find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 ! -name ".venv" -exec rm -rf {} +
 
-if [[ -d "$INSTALL_DIR/.git" ]]; then
-    echo -e "${yellow}Existing install found, updating...${normal}"
-    git -C "$INSTALL_DIR" pull --ff-only
 else
-    FRESH_INSTALL=true
-    git clone https://github.com/nisyk/mediacontrol-tui.git "$INSTALL_DIR"
-
+  FRESH_INSTALL=true
+  mkdir -p "$INSTALL_DIR"
 fi
+
+cp -r "$SCRIPT_DIR"/. "$INSTALL_DIR/"
 
 
 cd "$INSTALL_DIR"
 
-python3 -m venv --system-site-packages venv
+if [[ ! -d ".venv" ]]; then
+    python3 -m venv --system-site-packages .venv
+fi
 
 set +u
-source venv/bin/activate
+source .venv/bin/activate
 set -u
-pip install --upgrade pip # pip biarkan transparan
+pip install --upgrade pip
 pip install -r requirements.txt
 
 pip install pyinstaller
-rm -rf build/ dist/ *.spec
+
 pyinstaller --onefile --name mdct app.py
 
 mkdir -p "$HOME/.local/bin"
 ln -sf "$INSTALL_DIR/dist/mdct" "$HOME/.local/bin/mdct"
 
-# Make uninstaller
-cat > "$INSTALL_DIR/uninstall.sh" << 'EOF'
-#!/bin/bash
-green='\033[0;32m'
-yellow='\033[0;33m'
-normal='\033[0m'
-
-echo -e "${yellow}Uninstalling MDCT...${normal}"
-rm -rf "$HOME/.local/share/mdct"
-rm -f "$HOME/.local/bin/mdct"
-echo -e "${green}MDCT uninstalled.${normal}"
-EOF
-chmod +x "$INSTALL_DIR/uninstall.sh"
-
+chmod +x "uninstall.sh"
 
 if command -v mdct &> /dev/null; then
     echo -e "${green}Installation completed! Run mdct.${normal}"
