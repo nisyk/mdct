@@ -10,18 +10,18 @@ class MprisClient:
     def __init__(self):
         self.bus = dbus.SessionBus()
         self.active_player = None
+        self.active_player_name = None
         self._art_cache = {}
 
 
     # Fetch Media Player session
     def _get_player(self):
-
         if self.active_player is not None:
             return self.active_player
         try:
-
             for name in self.bus.list_names():
                 if name.startswith('org.mpris.MediaPlayer2.'):
+                    self.active_player_name = name
                     self.active_player = self.bus.get_object(name, '/org/mpris/MediaPlayer2')
                     return self.active_player
         except dbus.exceptions.DBusException:
@@ -30,9 +30,27 @@ class MprisClient:
         self.active_player = None
         return None
 
-    # Clear the Cache (avoid iterations)
+    def get_available_players(self):
+        players = []
+        try:
+            for name in self.bus.list_names():
+                if name.startswith('org.mpris.MediaPlayer2.'):
+                    short = name.replace('org.mpris.MediaPlayer2.', '')
+                    players.append((short, name))
+        except dbus.exceptions.DBusException:
+            pass
+        return players
+
+    def set_active_player(self, dbus_name):
+        try:
+            self.active_player_name = dbus_name
+            self.active_player = self.bus.get_object(dbus_name, '/org/mpris/MediaPlayer2')
+        except dbus.exceptions.DBusException:
+            self._reset_player()
+
     def _reset_player(self):
         self.active_player = None
+        self.active_player_name = None
 
     # Command Control
     async def receive_command(self, command):
@@ -137,15 +155,19 @@ class MprisClient:
                 player_props = dbus.Interface(player_obj, 'org.freedesktop.DBus.Properties')
                 metadata = player_props.Get("org.mpris.MediaPlayer2.Player", "Metadata")
                 play_status = player_props.Get("org.mpris.MediaPlayer2.Player", "PlaybackStatus")
-                player_id = player_props.Get("org.mpris.MediaPlayer2", "Identity")
-
                 artist_raw = metadata.get('xesam:artist', [])
+
                 if isinstance(artist_raw, (list, dbus.Array)) and len(artist_raw) > 0:
                     artist = str(artist_raw[0])
                 elif isinstance(artist_raw, str):
                     artist = artist_raw
                 else:
                     artist = "Unknown Artist"
+
+                try:
+                    player_id = str(player_props.Get("org.mpris.MediaPlayer2", "Identity"))
+                except dbus.exceptions.DBusException:
+                    player_id = self.active_player_name.replace('org.mpris.MediaPlayer2', '')
 
                 try:
                     position_raw = player_props.Get("org.mpris.MediaPlayer2.Player", "Position")

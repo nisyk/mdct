@@ -1,6 +1,7 @@
 import argparse
+import asyncio
 from textual.app import App, ComposeResult
-from textual.widgets import Button, ProgressBar, Label, Footer
+from textual.widgets import Button, ProgressBar, Label, Footer, Select
 from textual.containers import Horizontal, Vertical
 from textual import on
 
@@ -34,25 +35,24 @@ class MDCT(App):
         align: center middle;
         width: 100%;
     }
-
-    #player-id-info, #track-info, #artist-info {
+    
+    #track-info, #artist-info {
         width: 100%;
         height: auto;
         text-align: center;
     }
-    
-    #player-id-info {
-        padding-bottom: 1;
-        text-style: reverse;
-        &:inline {
-            padding-bottom: 0;
-        }
-    }
+
 
     #track-info {
         margin-top: 1;
         color: $primary;
         text-style: bold;
+    }
+    
+    #player-select {
+        width: 100%;
+        height: 3;
+        margin-bottom: 1;
     }
 
     #artist-info {
@@ -119,7 +119,7 @@ class MDCT(App):
         self.client = MprisClient()
         self.is_fullscreen = fullscreen
 
-        self.player_id_info = Label("mdct", id='player-id-info')
+        self.player_selector = Select([], id='select-player', allow_blank=True, prompt="mdct")
         self.song_info = Label("Loading...", id='track-info')
         self.artist_info = Label(" ", id='artist-info')
         self.track_progress = Label("00:00 / 00:00", id='track-progress')
@@ -140,7 +140,7 @@ class MDCT(App):
     # Compose All Widgets
     def compose(self) -> ComposeResult:
         with Vertical(id='main_panel'):
-            yield self.player_id_info
+            yield self.player_selector
             if self.is_fullscreen:
                 with Horizontal(id='art-container'):
                     yield self.album_art
@@ -162,8 +162,9 @@ class MDCT(App):
     # Update the UI for 1 Hz
     async def on_mount(self):
         await self.update_ui()
-
+        await self._refresh_player_list()
         self.set_interval(1, self.update_ui)
+        self.set_interval(5, self._refresh_player_list)
 
     # Give the UI info from mpris.py backend
     async def update_ui(self):
@@ -175,11 +176,7 @@ class MDCT(App):
             self.artist_info.update(" ")
             self.progressbar.update(total=100, progress=0)
             self.btn_play.label = "▶"
-
-            self.player_id_info.update("Offline")
-            self.player_id_info.styles.color = None
-            self.player_id_info.styles.opacity = 0.6
-            self.player_id_info.styles.text_style = 'none'
+            self.player_selector.disabled = True
             if self.is_fullscreen:
                 self.album_art.image = None
                 self.last_art_url = None
@@ -188,23 +185,7 @@ class MDCT(App):
             self.song_info.update(f"{info['title']}")
             self.artist_info.update(f"{info['artist']}")
 
-            self.player_id_info.update(f" {info['player_id']} ")
-            self.player_id_info.styles.opacity = None
-            self.player_id_info.styles.color = None
-            self.player_id_info.styles.text_style = None
-
-            if info['player_id'] == "YouTube Music":
-                self.player_id_info.styles.color = '#EE2D38'
-
-            if info['player_id'] == "Spotify":
-                self.player_id_info.styles.color = '#1ED760'
-
-            if info['player_id'] == "Strawberry":
-                self.player_id_info.styles.color = '#F42C5D'
-
-            if info['player_id'] == "Audacious":
-                self.player_id_info.styles.color = '#6495ED'
-
+            self.player_selector.disabled = False
 
             if self.is_fullscreen:
                 art_url = info.get('art_url')
@@ -232,6 +213,17 @@ class MDCT(App):
         else:
             self.btn_play.label = "▶"
 
+    async def _refresh_player_list(self):
+        players = await asyncio.to_thread(self.client.get_available_players)
+        if players:
+            self.player_selector.set_options(players)
+            self.player_selector.disabled = False
+            if self.client.active_player_name:
+                self.player_selector.value = self.client.active_player_name
+        else:
+            self.player_selector.clear()
+            self.player_selector.disabled = True
+
     # Events Handler
     @on(Button.Pressed, "#btn-prev")
     async def btn_prev(self):
@@ -256,6 +248,13 @@ class MDCT(App):
     @on(Button.Pressed, "#btn-seek-next")
     async def btn_seek_next(self):
         await self.client.seek_relative(10)
+        await self.update_ui()
+
+    @on(Select.Changed, "#select-player")
+    async def on_player_changed(self, event: Select.Changed):
+        if event.value is None or event.value is Select.NULL:
+            return
+        await asyncio.to_thread(self.client.set_active_player, event.value)
         await self.update_ui()
 
     async def action_bind_prev(self) -> None:
