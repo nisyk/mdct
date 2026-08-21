@@ -2,7 +2,7 @@ import argparse
 import asyncio
 from textual.app import App, ComposeResult
 from textual.widgets import Button, ProgressBar, Label, Footer, Select
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal, Vertical, Container
 from textual import on
 
 from textual_image.widget import Image
@@ -17,9 +17,9 @@ class MDCT(App):
         ("space", "bind_play_pause", "Play/Pause"),
         ("n", "bind_next", "Next"),
         ("b", "bind_prev", "Previous"),
-        ("q", "quit", "Quit"),
         ("l", "bind_seek_plus", "Seek+"),
         ("h", "bind_seek_min", "Seek-"),
+        ("q", "quit", "Quit"),
     ]
 
     CSS = """
@@ -27,7 +27,7 @@ class MDCT(App):
     Screen {
         &:inline {
             border: none;
-            height: 12;
+            height: 14;
         }
     }
 
@@ -49,11 +49,30 @@ class MDCT(App):
         text-style: bold;
     }
     
-    #player-select {
+    #select-player-wrapper {
         width: 100%;
-        height: 3;
-        margin-bottom: 1;
+        height: auto;
+        align: center middle;
+        padding-bottom: 1;
+            &:inline {
+                padding-bottom: 0;
+            }
     }
+    
+    #select-player {
+        max-width: 31;
+    }
+    
+    #select-player SelectCurrent {
+        padding: 0 1;
+    }
+        
+    
+    #select-player SelectOverlay .option-list--option-highlighted {
+        background: $secondary;
+    }
+
+
 
     #artist-info {
         margin-bottom: 1;
@@ -118,8 +137,7 @@ class MDCT(App):
         super().__init__()
         self.client = MprisClient()
         self.is_fullscreen = fullscreen
-
-        self.player_selector = Select([], id='select-player', allow_blank=True, prompt="mdct")
+        self.player_selector = Select([], id='select-player', allow_blank=True, prompt="Media Source", compact=True)
         self.song_info = Label("Loading...", id='track-info')
         self.artist_info = Label(" ", id='artist-info')
         self.track_progress = Label("00:00 / 00:00", id='track-progress')
@@ -140,7 +158,8 @@ class MDCT(App):
     # Compose All Widgets
     def compose(self) -> ComposeResult:
         with Vertical(id='main_panel'):
-            yield self.player_selector
+            with Container(id='select-player-wrapper'):
+                yield self.player_selector
             if self.is_fullscreen:
                 with Horizontal(id='art-container'):
                     yield self.album_art

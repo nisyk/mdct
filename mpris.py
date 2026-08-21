@@ -35,11 +35,17 @@ class MprisClient:
         try:
             for name in self.bus.list_names():
                 if name.startswith('org.mpris.MediaPlayer2.'):
-                    short = name.replace('org.mpris.MediaPlayer2.', '')
-                    players.append((short, name))
+                    try:
+                        obj = self.bus.get_object(name, '/org/mpris/MediaPlayer2')
+                        props = dbus.Interface(obj, 'org.freedesktop.DBus.Properties')
+                        identity = str(props.Get("org.mpris.MediaPlayer2", "Identity"))
+                    except dbus.exceptions.DBusException:
+                        identity = name.replace('org.mpris.MediaPlayer2.', '')
+                    players.append((identity, name))
         except dbus.exceptions.DBusException:
             pass
         return players
+
 
     def set_active_player(self, dbus_name):
         try:
@@ -165,7 +171,7 @@ class MprisClient:
                     artist = "Unknown Artist"
 
                 try:
-                    player_id = str(player_props.Get("org.mpris.MediaPlayer2", "Identity"))
+                    player_id = player_props.Get("org.mpris.MediaPlayer2", "Identity")
                 except dbus.exceptions.DBusException:
                     player_id = self.active_player_name.replace('org.mpris.MediaPlayer2', '')
 
