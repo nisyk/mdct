@@ -67,10 +67,14 @@ class MDCT(App):
         padding: 0 1;
     }
         
-    
+    #select-player SelectOverlay .option-list--option {
+        padding: 0 2;
+    }
+
     #select-player SelectOverlay .option-list--option-highlighted {
         background: $secondary;
     }
+    
 
 
 
