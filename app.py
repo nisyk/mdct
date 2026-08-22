@@ -60,7 +60,9 @@ class MDCT(App):
     ]
 
     CSS = """
+
     Screen {
+        align: center middle;
         &:inline {
             border: none;
             height: 14;
@@ -78,6 +80,7 @@ class MDCT(App):
         text-align: center;
     }
 
+
     #track-info {
         margin-top: 1;
         color: $primary;
@@ -89,15 +92,27 @@ class MDCT(App):
         height: auto;
         align: center middle;
         padding-bottom: 1;
-        &:inline {
-            padding-bottom: 0;
-        }
+            &:inline {
+                padding-bottom: 0;
+            }
     }
 
-    #select-player { max-width: 22; }
-    #select-player SelectCurrent { padding: 0 1; }
-    #select-player SelectOverlay .option-list--option { padding: 0 2; }
-    #select-player SelectOverlay .option-list--option-highlighted { background: $secondary; }
+    #select-player {
+        max-width: 22;
+    }
+
+    #select-player SelectCurrent {
+        padding: 0 1;
+    }
+
+    #select-player SelectOverlay .option-list--option {
+        padding: 0 2;
+    }
+
+    #select-player SelectOverlay .option-list--option-highlighted {
+        background: $secondary;
+    }
+
 
     #volume-display {
         width: auto;
@@ -106,9 +121,14 @@ class MDCT(App):
         margin-left: 1;
         color: $text-muted;
     }
-    #volume-display:hover { color: $text; }
+    
+    #volume-display:hover {
+        color: $text;
+    }
 
-    #artist-info { margin-bottom: 1; }
+    #artist-info {
+        margin-bottom: 1;
+    }
 
     #art-container {
         width: 100%;
@@ -117,10 +137,13 @@ class MDCT(App):
         margin-bottom: 1;
     }
 
+
     #album_art {
         width: 31;
         height: auto;
+
     }
+
 
     #media-control {
         width: 100%;
@@ -133,10 +156,13 @@ class MDCT(App):
         min-width: 6;
         margin-left: 1;
         margin-right: 1;
+
     }
+
     #media-control #btn-play {
         width: auto;
         min-width: 10;
+
     }
 
     #progress Bar > .bar--bar {
@@ -148,44 +174,25 @@ class MDCT(App):
         height: auto;
         align: center middle;
     }
-    #track-progress { opacity: 50%; }
 
-    /* ---- wide layout ----
-       Same proven pattern: 100%-wide parent + align centers auto children. */
+    #track-progress {
+        opacity: 50%
+    }
+    
+
+    /* ---- wide layout ---- */
     #wide-root {
         width: 100%;
         height: 100%;
-        align: center middle;   /* centers the two columns as a group */
         overflow: hidden;
     }
 
     #wide-left,
     #wide-right {
-        width: auto;            /* hug their content... */
-        height: auto;
-        align: center middle;   /* ...and center their children inside */
-        padding: 1 2;
-    }
-
-    #wide-root #select-player-wrapper {
-        width: auto;
-        padding-bottom: 0;
-    }
-
-    #wide-root #track-info,
-    #wide-root #artist-info {
-        width: auto;
-        margin: 0;
-    }
-
-    #wide-root #progress {
-        width: auto;
-        min-width: 40;
-    }
-
-    #wide-root #media-control {
-        width: auto;
-        margin: 0;
+        width: 1fr;               /* real width → inner centering rules work */
+        height: 100%;
+        align: center middle;     /* vertical centering of the stack */
+        overflow: hidden;
     }
 
     #wide-left #album_art {
@@ -193,6 +200,7 @@ class MDCT(App):
         height: auto;
         max-height: 100%;
     }
+
     """
 
 
@@ -230,7 +238,8 @@ class MDCT(App):
                     with Horizontal(id='select-player-wrapper'):
                         yield self.player_selector
                         yield self.volume_display
-                    yield self.album_art
+                    with Horizontal(id='art-container'):
+                        yield self.album_art
 
                 with Vertical(id='wide-right'):
                     yield self.song_info
