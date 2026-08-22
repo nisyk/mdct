@@ -12,6 +12,7 @@ class MprisClient:
         self.active_player = None
         self.active_player_name = None
         self._art_cache = {}
+        self._init_volume = None
 
 
     # Fetch Media Player session
@@ -77,6 +78,46 @@ class MprisClient:
             self._reset_player()
         except Exception as e:
             logging.error(f"Error command: {e}")
+
+
+    async def set_volume(self, level: int):
+        await asyncio.to_thread(self._set_volume_sync, level)
+
+    async def toggle_mute(self):
+        await asyncio.to_thread(self._set_volume_sync, None)
+
+
+    def _set_volume_sync(self, level: int | None):
+        try:
+            player_obj = self._get_player()
+            if not player_obj:
+                return
+            props = dbus.Interface(player_obj, 'org.freedesktop.DBus.Properties')
+
+            if level is None:
+                current = float(props.Get("org.mpris.MediaPlayer2.Player", "Volume"))
+                current_int = int(round(current * 100))
+
+                if current_int > 0:
+                    self.init_volume = current_int
+                    props.Set("org.mpris.MediaPlayer2.Player", "Volume",
+                              dbus.Double(0.0))
+                else:
+                    restore = self.init_volume if self.init_volume else 50
+                    props.Set("org.mpris.MediaPlayer2.Player", "Volume",
+                              dbus.Double(max(1, restore) / 100.0))
+            else:
+                clamped = max(0, min(100, level))
+                if clamped > 0:
+                    self.init_volume = clamped
+                props.Set("org.mpris.MediaPlayer2.Player", "Volume",
+                          dbus.Double(clamped / 100.0))
+        except dbus.exceptions.DBusException:
+            self._reset_player()
+        except Exception as e:
+            logging.error(f"Error: {e}")
+
+
 
     # Seek Control
     async def seek_relative(self, offset_seconds):
@@ -176,6 +217,12 @@ class MprisClient:
                     player_id = self.active_player_name.replace('org.mpris.MediaPlayer2', '')
 
                 try:
+                    volume_raw = player_props.Get("org.mpris.MediaPlayer2.Player", "Volume")
+                    volume = int(round(float(volume_raw) * 100))
+                except dbus.exceptions.DBusException:
+                    volume = 0
+
+                try:
                     position_raw = player_props.Get("org.mpris.MediaPlayer2.Player", "Position")
                 except dbus.exceptions.DBusException:
                     position_raw = 0
@@ -195,6 +242,7 @@ class MprisClient:
                         "length_sec": int(length_raw) // 1000000 if length_raw else 0,
                         "art_url": art_url,
                         "player_id": player_id,
+                        "volume": volume,
                         }
 
             else:
@@ -217,5 +265,6 @@ class MprisClient:
                     "position_sec": 0,
                     "length_sec": 0,
                     "art_url": None,
-                    "player_id": None
+                    "player_id": None,
+                    "volume": 0,
                     }

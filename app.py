@@ -1,8 +1,13 @@
 import argparse
 import asyncio
+from rich.text import Text
+
 from textual.app import App, ComposeResult
 from textual.widgets import Button, ProgressBar, Label, Footer, Select
-from textual.containers import Horizontal, Vertical, Container
+from textual.reactive import reactive
+from textual.widget import Widget
+from textual.containers import Horizontal, Vertical
+from textual.events import MouseScrollDown, MouseScrollUp
 from textual import on
 
 from textual_image.widget import Image
@@ -10,6 +15,37 @@ from textual_image.widget import Image
 from mpris import MprisClient
 
 __version__ = "0.1.1"
+
+class VolumeWidget(Widget):
+    """Volume display — scroll to change volume."""
+
+    DEFAULT_CSS = """
+    VolumeWidget {
+        height: 1;
+        width: auto;
+        min-width: 8;
+        padding: 0 1;
+        color: $text-muted;
+    }
+    VolumeWidget:hover {
+        color: $text;
+    }
+    """
+
+    volume: reactive[int] = reactive(0)
+
+    def render(self) -> Text:
+        if self.volume == 0:
+            return Text(f"🔇 {self.volume:>3}%")
+        return Text(f"🔊 {self.volume:>3}%")
+
+    async def on_mouse_scroll_up(self, event: MouseScrollUp) -> None:
+        event.stop()
+        await self.app.volume_change(+5)
+
+    async def on_mouse_scroll_down(self, event: MouseScrollDown) -> None:
+        event.stop()
+        await self.app.volume_change(-5)
 
 class MDCT(App):
 
@@ -19,6 +55,7 @@ class MDCT(App):
         ("b", "bind_prev", "Previous"),
         ("l", "bind_seek_plus", "Seek+"),
         ("h", "bind_seek_min", "Seek-"),
+        ("m", "bind_mute", "Mute"),
         ("q", "quit", "Quit"),
     ]
 
@@ -35,7 +72,7 @@ class MDCT(App):
         align: center middle;
         width: 100%;
     }
-    
+
     #track-info, #artist-info {
         width: 100%;
         height: auto;
@@ -48,7 +85,7 @@ class MDCT(App):
         color: $primary;
         text-style: bold;
     }
-    
+
     #select-player-wrapper {
         width: 100%;
         height: auto;
@@ -58,15 +95,15 @@ class MDCT(App):
                 padding-bottom: 0;
             }
     }
-    
+
     #select-player {
-        max-width: 31;
+        max-width: 22;
     }
-    
+
     #select-player SelectCurrent {
         padding: 0 1;
     }
-        
+
     #select-player SelectOverlay .option-list--option {
         padding: 0 2;
     }
@@ -74,9 +111,19 @@ class MDCT(App):
     #select-player SelectOverlay .option-list--option-highlighted {
         background: $secondary;
     }
+
+
+    #volume-display {
+        width: auto;
+        height: 1;
+        padding: 0 1;
+        margin-left: 1;
+        color: $text-muted;
+    }
     
-
-
+    #volume-display:hover {
+        color: $text;
+    }
 
     #artist-info {
         margin-bottom: 1;
@@ -130,7 +177,7 @@ class MDCT(App):
     #track-progress {
         opacity: 50%
     }
-    
+
 
 
     """
@@ -144,6 +191,7 @@ class MDCT(App):
         self.player_selector = Select([], id='select-player', allow_blank=True, prompt="Media Source", compact=True)
         self.song_info = Label("Loading...", id='track-info')
         self.artist_info = Label(" ", id='artist-info')
+        self.volume_display = VolumeWidget(id="volume-display")
         self.track_progress = Label("00:00 / 00:00", id='track-progress')
         self.progressbar = ProgressBar(total=100, show_percentage=False, show_eta=False)
         self.btn_prev = Button("|<", id="btn-prev")
@@ -162,8 +210,9 @@ class MDCT(App):
     # Compose All Widgets
     def compose(self) -> ComposeResult:
         with Vertical(id='main_panel'):
-            with Container(id='select-player-wrapper'):
+            with Horizontal(id='select-player-wrapper'):
                 yield self.player_selector
+                yield self.volume_display
             if self.is_fullscreen:
                 with Horizontal(id='art-container'):
                     yield self.album_art
@@ -196,10 +245,12 @@ class MDCT(App):
         if info['status'] == "Offline":
 
             self.song_info.update("There's no currently running...")
+            self.volume_display.volume = 0
             self.artist_info.update(" ")
             self.progressbar.update(total=100, progress=0)
             self.btn_play.label = "▶"
             self.player_selector.disabled = True
+
             if self.is_fullscreen:
                 self.album_art.image = None
                 self.last_art_url = None
@@ -209,6 +260,7 @@ class MDCT(App):
             self.artist_info.update(f"{info['artist']}")
 
             self.player_selector.disabled = False
+            self.volume_display.volume = info['volume']
 
             if self.is_fullscreen:
                 art_url = info.get('art_url')
@@ -247,6 +299,8 @@ class MDCT(App):
             self.player_selector.clear()
             self.player_selector.disabled = True
 
+
+
     # Events Handler
     @on(Button.Pressed, "#btn-prev")
     async def btn_prev(self):
@@ -280,8 +334,19 @@ class MDCT(App):
         await asyncio.to_thread(self.client.set_active_player, event.value)
         await self.update_ui()
 
+
+    async def volume_change(self, delta: int):
+        info = await self.client.get_current_info()
+        new_vol = max(0, min(100, info["volume"] + delta))
+        await self.client.set_volume(new_vol)
+        self.volume_display.volume = new_vol  # reactive auto-render
+
     async def action_bind_prev(self) -> None:
         await self.client.receive_command('b')
+        await self.update_ui()
+
+    async def action_bind_mute(self) -> None:
+        await self.client.toggle_mute()
         await self.update_ui()
 
     async def action_bind_play_pause(self) -> None:
@@ -299,6 +364,8 @@ class MDCT(App):
     async def action_bind_seek_plus(self) -> None:
         await self.client.seek_relative(10)
         await self.update_ui()
+
+
 
     async def action_quit(self) -> None:
         self.exit()
