@@ -60,7 +60,6 @@ class MDCT(App):
     ]
 
     CSS = """
-
     Screen {
         &:inline {
             border: none;
@@ -79,7 +78,6 @@ class MDCT(App):
         text-align: center;
     }
 
-
     #track-info {
         margin-top: 1;
         color: $primary;
@@ -91,27 +89,15 @@ class MDCT(App):
         height: auto;
         align: center middle;
         padding-bottom: 1;
-            &:inline {
-                padding-bottom: 0;
-            }
+        &:inline {
+            padding-bottom: 0;
+        }
     }
 
-    #select-player {
-        max-width: 22;
-    }
-
-    #select-player SelectCurrent {
-        padding: 0 1;
-    }
-
-    #select-player SelectOverlay .option-list--option {
-        padding: 0 2;
-    }
-
-    #select-player SelectOverlay .option-list--option-highlighted {
-        background: $secondary;
-    }
-
+    #select-player { max-width: 22; }
+    #select-player SelectCurrent { padding: 0 1; }
+    #select-player SelectOverlay .option-list--option { padding: 0 2; }
+    #select-player SelectOverlay .option-list--option-highlighted { background: $secondary; }
 
     #volume-display {
         width: auto;
@@ -120,14 +106,9 @@ class MDCT(App):
         margin-left: 1;
         color: $text-muted;
     }
-    
-    #volume-display:hover {
-        color: $text;
-    }
+    #volume-display:hover { color: $text; }
 
-    #artist-info {
-        margin-bottom: 1;
-    }
+    #artist-info { margin-bottom: 1; }
 
     #art-container {
         width: 100%;
@@ -136,13 +117,10 @@ class MDCT(App):
         margin-bottom: 1;
     }
 
-
     #album_art {
         width: 31;
         height: auto;
-
     }
-
 
     #media-control {
         width: 100%;
@@ -155,13 +133,10 @@ class MDCT(App):
         min-width: 6;
         margin-left: 1;
         margin-right: 1;
-
     }
-
     #media-control #btn-play {
         width: auto;
         min-width: 10;
-
     }
 
     #progress Bar > .bar--bar {
@@ -173,21 +148,60 @@ class MDCT(App):
         height: auto;
         align: center middle;
     }
+    #track-progress { opacity: 50%; }
 
-    #track-progress {
-        opacity: 50%
+    /* ---- wide layout ----
+       Same proven pattern: 100%-wide parent + align centers auto children. */
+    #wide-root {
+        width: 100%;
+        height: 100%;
+        align: center middle;   /* centers the two columns as a group */
+        overflow: hidden;
     }
 
+    #wide-left,
+    #wide-right {
+        width: auto;            /* hug their content... */
+        height: auto;
+        align: center middle;   /* ...and center their children inside */
+        padding: 1 2;
+    }
 
+    #wide-root #select-player-wrapper {
+        width: auto;
+        padding-bottom: 0;
+    }
 
+    #wide-root #track-info,
+    #wide-root #artist-info {
+        width: auto;
+        margin: 0;
+    }
+
+    #wide-root #progress {
+        width: auto;
+        min-width: 40;
+    }
+
+    #wide-root #media-control {
+        width: auto;
+        margin: 0;
+    }
+
+    #wide-left #album_art {
+        width: 31;
+        height: auto;
+        max-height: 100%;
+    }
     """
 
 
     # Initialize Widgets
-    def __init__(self, fullscreen: bool = False):
+    def __init__(self, fullscreen: bool = False, wide: bool = False):
         super().__init__()
         self.client = MprisClient()
         self.is_fullscreen = fullscreen
+        self.is_wide = wide
         self.player_selector = Select([], id='select-player', allow_blank=True, prompt="Media Source", compact=True)
         self.song_info = Label("Loading...", id='track-info')
         self.artist_info = Label(" ", id='artist-info')
@@ -200,7 +214,7 @@ class MDCT(App):
         self.btn_seek_prev = Button("<<", id="btn-seek-prev")
         self.btn_seek_next = Button(">>", id="btn-seek-next")
 
-        if self.is_fullscreen:
+        if self.is_fullscreen or self.is_wide:
             self.album_art = Image(id='album_art')
             self.last_art_url = None
 
@@ -209,6 +223,31 @@ class MDCT(App):
 
     # Compose All Widgets
     def compose(self) -> ComposeResult:
+        # ── Wide layout: checked FIRST, then return ──
+        if self.is_wide:
+            with Horizontal(id='wide-root'):
+                with Vertical(id='wide-left'):
+                    with Horizontal(id='select-player-wrapper'):
+                        yield self.player_selector
+                        yield self.volume_display
+                    yield self.album_art
+
+                with Vertical(id='wide-right'):
+                    yield self.song_info
+                    yield self.artist_info
+                    with Vertical(id='progress'):
+                        yield self.progressbar
+                        yield self.track_progress
+                    with Horizontal(id='media-control'):
+                        yield self.btn_prev
+                        yield self.btn_seek_prev
+                        yield self.btn_play
+                        yield self.btn_seek_next
+                        yield self.btn_next
+            yield Footer()
+            return  # ← stop here so main_panel is never composed in wide mode
+
+        # ── Default / fullscreen vertical layout ──
         with Vertical(id='main_panel'):
             with Horizontal(id='select-player-wrapper'):
                 yield self.player_selector
@@ -233,10 +272,15 @@ class MDCT(App):
 
     # Update the UI for 1 Hz
     async def on_mount(self):
+
+        if self.is_wide:
+            self.screen.add_class("wide")
+
         await self.update_ui()
         await self._refresh_player_list()
         self.set_interval(1, self.update_ui)
         self.set_interval(5, self._refresh_player_list)
+
 
     # Give the UI info from mpris.py backend
     async def update_ui(self):
@@ -251,7 +295,7 @@ class MDCT(App):
             self.btn_play.label = "▶"
             self.player_selector.disabled = True
 
-            if self.is_fullscreen:
+            if self.is_fullscreen or self.is_wide:
                 self.album_art.image = None
                 self.last_art_url = None
         else:
@@ -262,7 +306,7 @@ class MDCT(App):
             self.player_selector.disabled = False
             self.volume_display.volume = info['volume']
 
-            if self.is_fullscreen:
+            if self.is_fullscreen or self.is_wide:
                 art_url = info.get('art_url')
 
                 if art_url and art_url != self.last_art_url:
@@ -376,10 +420,11 @@ class MDCT(App):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="mdct", description='TUI Media Control')
     parser.add_argument("-f", "--full", action="store_true", help="show full screen")
+    parser.add_argument("-w", "--wide", action="store_true", help="side by side interface")
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
 
     args = parser.parse_args()
 
 
-    app = MDCT(fullscreen=args.full)
-    app.run(inline=not args.full)
+    app = MDCT(fullscreen=args.full, wide=args.wide)
+    app.run(inline=not (args.full or args.wide))

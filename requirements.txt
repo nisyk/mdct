@@ -1,3 +1,4 @@
 textual
 textual-image
+rich
 Pillow
