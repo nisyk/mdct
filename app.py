@@ -185,11 +185,12 @@ class MDCT(App):
         width: 100%;
         height: 100%;
         overflow: hidden;
+        align: center middle;
     }
 
     #wide-left,
     #wide-right {
-        width: 1fr;               /* real width → inner centering rules work */
+        max-width: 54;               /* real width → inner centering rules work */
         height: 100%;
         align: center middle;     /* vertical centering of the stack */
         overflow: hidden;
