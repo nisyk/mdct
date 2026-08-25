@@ -94,7 +94,6 @@ class ThemeConfig:
         self.data["custom_themes"].append(self._theme_to_dict(theme))
         self.save_data()
 
-
 class VolumeWidget(Widget):
 
     """Volume Display Widget:
@@ -228,7 +227,11 @@ class MDCT(App):
         height: auto;
 
     }
-
+    
+    #album_art.no-art {
+        min-height: 14;
+        border: round gray 50%;
+    }
 
     #media-control {
         width: 100%;
@@ -363,13 +366,13 @@ class MDCT(App):
                 self.screen.add_class("wide")
 
             # 1. Register custom themes from the YAML file
-                for theme in self.theme_config.get_custom_theme():
-                    self.register_theme(theme)
+            for theme in self.theme_config.get_custom_theme():
+                self.register_theme(theme)
 
                 # 2. FIX: Get the active theme NAME (string), not the list of themes!
-                saved_theme_name = self.theme_config.get_active_theme()
-                if saved_theme_name and saved_theme_name in self.available_themes:
-                    self.theme = saved_theme_name
+            saved_theme_name = self.theme_config.get_active_theme()
+            if saved_theme_name and saved_theme_name in self.available_themes:
+                self.theme = saved_theme_name
 
             await self.update_ui()
             await self._refresh_player_list()
@@ -395,6 +398,7 @@ class MDCT(App):
 
             if self.is_fullscreen or self.is_wide:
                 self.album_art.image = None
+                self.album_art.add_class("no-art")
                 self.last_art_url = None
 
         # Online condition
@@ -414,12 +418,15 @@ class MDCT(App):
 
                     if pil_image:
                         self.album_art.image = pil_image
+                        self.album_art.remove_class("no-art")
                         self.last_art_url = art_url
                     else:
                         self.album_art.image = None
+                        self.album_art.add_class("no-art")
                         self.last_art_url = None
                 elif not art_url:
                     self.album_art.image = None
+                    self.album_art.add_class("no-art")
                     self.last_art_url = None
 
         if info['length_sec'] > 0:
@@ -447,6 +454,7 @@ class MDCT(App):
 
     def watch_theme(self, theme_name: str) -> None:
         self.theme_config.set_active_theme(theme_name)
+
 
     # Events Handler
 
