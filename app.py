@@ -1,5 +1,10 @@
 import argparse
 import asyncio
+import logging
+import yaml
+import inspect
+from pathlib import Path
+
 from rich.text import Text
 
 from textual.app import App, ComposeResult
@@ -7,6 +12,7 @@ from textual.widgets import Button, ProgressBar, Label, Footer, Select
 from textual.reactive import reactive
 from textual.widget import Widget
 from textual.containers import Horizontal, Vertical
+from textual.theme import Theme
 from textual.events import MouseScrollDown, MouseScrollUp
 from textual import on
 
@@ -15,6 +21,79 @@ from textual_image.widget import Image
 from mpris import MprisClient
 
 __version__ = "0.2.0"
+CONFIG_DIR = Path.home() / ".config" / "mdct"
+CONFIG_FILE = CONFIG_DIR / "theme.yaml"
+CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+
+class ThemeConfig:
+    def __init__(self, config_file: Path):
+        self.config_file = config_file
+        self.data = self._load_data()
+
+    @staticmethod
+    def _theme_to_dict(theme: Theme):
+        return {
+            "name": theme.name,
+            "primary": theme.primary,
+            "secondary": theme.secondary,
+            "accent": theme.accent,
+            "foreground": theme.foreground,
+            "background": theme.background,
+            "success": theme.success,
+            "warning": theme.warning,
+            "error": theme.error,
+            "surface": theme.surface,
+            "panel": theme.panel,
+            "dark": theme.dark,
+            "variables": theme.variables or {}
+        }
+
+    @staticmethod
+    def _dict_to_theme(data: dict) -> Theme:
+        valid_keys = set(inspect.signature(Theme).parameters.keys()) - {'self'}
+        clean_data = {k: v for k, v in data.items() if k in valid_keys}
+        return Theme(**clean_data)
+
+    def _load_data(self) -> dict:
+        if not self.config_file.exists():
+            return {"active_theme": None, "custom_themes": []}
+
+        try:
+            with open(self.config_file, "r", encoding="utf-8") as f:
+                return yaml.safe_load(f) or {"active_theme": None, "custom_themes": []}
+        except (yaml.YAMLError, IOError):
+            return {"active_theme": None, "custom_themes": []}
+
+    def save_data(self) -> None:
+        try:
+            with open(self.config_file, "w", encoding="utf-8") as f:
+                yaml.dump(self.data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+        except IOError:
+            pass
+
+    def get_active_theme(self) -> str | None:
+        return self.data.get("active_theme")
+
+    def set_active_theme(self, theme_name: str) -> None:
+        self.data["active_theme"] = theme_name
+        self.save_data()
+
+    def get_custom_theme(self) -> list[Theme]:
+        themes = []
+        for theme_data in self.data.get("custom_themes", []):
+            try: themes.append(self._dict_to_theme(theme_data))
+            except (ValueError, TypeError) as e:
+                logging.warning(f"Malformed YAML in theme, skipping {e}")
+                continue
+        return themes
+
+    def add_custom_theme(self, theme: Theme) -> None:
+        self.data["custom_themes"] = [
+            t for t in self.data.get("custom_themes", []) if t.get("name") != theme.name
+        ]
+        self.data["custom_themes"].append(self._theme_to_dict(theme))
+        self.save_data()
+
 
 class VolumeWidget(Widget):
 
@@ -215,6 +294,7 @@ class MDCT(App):
     def __init__(self, fullscreen: bool = False, wide: bool = False):
         super().__init__()
         self.client = MprisClient()
+        self.theme_config = ThemeConfig(CONFIG_FILE)
         self.is_fullscreen = fullscreen
         self.is_wide = wide
         self.player_selector = Select([], id='select-player', allow_blank=True, prompt="Media Source", compact=True)
@@ -282,11 +362,19 @@ class MDCT(App):
         if self.is_wide:
             self.screen.add_class("wide")
 
+        # 1. Register custom themes from the YAML file
+        for theme in self.theme_config.get_custom_theme():
+            self.register_theme(theme)
+
+        # 2. FIX: Get the active theme NAME (string), not the list of themes!
+        saved_theme_name = self.theme_config.get_active_theme()
+        if saved_theme_name and saved_theme_name in self.available_themes:
+            self.theme = saved_theme_name
+
         await self.update_ui()
         await self._refresh_player_list()
         self.set_interval(1, self.update_ui) # Update UI/sec
         self.set_interval(5, self._refresh_player_list) # Update Player List/5 secs
-
 
 
     async def update_ui(self):
@@ -354,7 +442,8 @@ class MDCT(App):
             self.player_selector.clear()
             self.player_selector.disabled = True
 
-
+    def watch_theme(self, theme_name: str) -> None:
+        self.theme_config.set_active_theme(theme_name)
 
     # Events Handler
 

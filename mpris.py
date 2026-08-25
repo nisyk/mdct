@@ -219,7 +219,7 @@ class MprisClient:
                 try:
                     player_id = player_props.Get("org.mpris.MediaPlayer2", "Identity")
                 except dbus.exceptions.DBusException:
-                    player_id = self.active_player_name.replace('org.mpris.MediaPlayer2', '')
+                    player_id = (self.active_player_name or "Unknown").replace('org.mpris.MediaPlayer2', '')
 
                 try:
                     volume_raw = player_props.Get("org.mpris.MediaPlayer2.Player", "Volume")

@@ -1,4 +1,5 @@
 textual
 textual-image
 rich
+yaml
 Pillow
