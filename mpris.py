@@ -11,6 +11,7 @@ class MprisClient:
         self.bus = dbus.SessionBus()
         self.active_player = None
         self.active_player_name = None
+        self._props = None
         self._art_cache = {}
         self._init_volume = None
 
@@ -24,6 +25,7 @@ class MprisClient:
                 if name.startswith('org.mpris.MediaPlayer2.'):
                     self.active_player_name = name
                     self.active_player = self.bus.get_object(name, '/org/mpris/MediaPlayer2')
+                    self._props = dbus.Interface(self.active_player, 'org.freedesktop.DBus.Properties')
                     return self.active_player
         except dbus.exceptions.DBusException:
             self._reset_player()
@@ -52,12 +54,14 @@ class MprisClient:
         try:
             self.active_player_name = dbus_name
             self.active_player = self.bus.get_object(dbus_name, '/org/mpris/MediaPlayer2')
+            self._props = dbus.Interface(self.active_player, 'org.freedesktop.DBus.Properties')
         except dbus.exceptions.DBusException:
             self._reset_player()
 
     def _reset_player(self):
         self.active_player = None
         self.active_player_name = None
+        self._props = None
 
     # Command Control
     async def receive_command(self, command):
@@ -90,27 +94,26 @@ class MprisClient:
     def _set_volume_sync(self, level: int | None):
         try:
             player_obj = self._get_player()
-            if not player_obj:
+            if not player_obj or not self._props:
                 return
-            props = dbus.Interface(player_obj, 'org.freedesktop.DBus.Properties')
 
             if level is None:
-                current = float(props.Get("org.mpris.MediaPlayer2.Player", "Volume"))
+                current = float(self._props.Get("org.mpris.MediaPlayer2.Player", "Volume"))
                 current_int = int(round(current * 100))
 
                 if current_int > 0:
-                    self.init_volume = current_int
-                    props.Set("org.mpris.MediaPlayer2.Player", "Volume",
+                    self._init_volume = current_int
+                    self._props.Set("org.mpris.MediaPlayer2.Player", "Volume",
                               dbus.Double(0.0))
                 else:
-                    restore = self.init_volume if self.init_volume else 50
-                    props.Set("org.mpris.MediaPlayer2.Player", "Volume",
+                    restore = self._init_volume if self._init_volume else 50
+                    self._props.Set("org.mpris.MediaPlayer2.Player", "Volume",
                               dbus.Double(max(1, restore) / 100.0))
             else:
                 clamped = max(0, min(100, level))
                 if clamped > 0:
-                    self.init_volume = clamped
-                props.Set("org.mpris.MediaPlayer2.Player", "Volume",
+                    self._init_volume = clamped
+                self._props.Set("org.mpris.MediaPlayer2.Player", "Volume",
                           dbus.Double(clamped / 100.0))
         except dbus.exceptions.DBusException:
             self._reset_player()
@@ -173,6 +176,7 @@ class MprisClient:
             if pil_image:
                 if len(self._art_cache) >= 24:
                     self._art_cache.clear()
+                self._art_cache[url] = pil_image
             return pil_image
         except Exception as e:
             logging.error(f"Error fetching album: {e}")

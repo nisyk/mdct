@@ -19,6 +19,7 @@ __version__ = "0.1.1"
 class VolumeWidget(Widget):
     """Volume display — scroll to change volume."""
 
+
     DEFAULT_CSS = """
     VolumeWidget {
         height: 1;
@@ -46,6 +47,7 @@ class VolumeWidget(Widget):
     async def on_mouse_scroll_down(self, event: MouseScrollDown) -> None:
         event.stop()
         await self.app.volume_change(-5)
+
 
 class MDCT(App):
 
