@@ -5,6 +5,8 @@ A Textual-TUI-based Media Control with integration of MPRIS. Used in Terminal su
 
 ![Demo Full Screen](assets/screenshot2.png)
 
+![Demo Wide Screen](assets/screenshot3.png)
+
 ## Overview 
 mdct is based from Python with Textual TUI API to synchronize song metadatas from music player (such as: YouTube Music, Spotify, VLC, etc.) with integration of MPRIS dbus in Linux.
 
@@ -20,7 +22,7 @@ mdct is based from Python with Textual TUI API to synchronize song metadatas fro
 	e.g: Ubuntu, Linux Mint, Debian, Fedora, Bazzite, CachyOS, etc.
 - Python 3.10 or later with python3-dbus.
 - Terminal with mouse click support.
-- Terminal with KGP/Sixel protocol if want `--full` interface with album art.
+- Terminal with KGP/Sixel protocol if want `--full` or `--wide` interface with album art.
 
 ## Installation
 
@@ -45,17 +47,15 @@ Run this command:
 mdct
 ```
 
+### Flags
+| Flags |           | Order                                              |
+| ----- | --------- | -------------------------------------------------- |
+| -f    | --full    | show full-screen vertical layout with album art    |
+| -w    | --wide    | show side-by-side horizontal layout with album art |
+| -v    | --version | output version information                         |
+| -h    | --help    | display this help and exit                         |
 
-If you want with album art image content, run this command:
-
-```bash
-mdct -f
-```
-```bash
-mdct --full
-```
-
-> Note: You need terminal with KGP (Kitty Graphics Protocol)/Sixel protocol support to make album art visible, KGP protocol is reccomended (kitty, Konsole). For more information, please check: https://github.com/lnqs/textual-image (in this repo, KGP mentioned as TGP).
+> Note: You need terminal with TGP (Terminal Graphics Protocol) for Kitty/Sixel protocol support to make album art visible, KGP protocol is reccomended (kitty, Konsole). For more information, please check: https://github.com/lnqs/textual-image (in this repo, KGP mentioned as TGP).
 
 ## Keybindings
 
