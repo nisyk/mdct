@@ -33,6 +33,7 @@ class MprisClient:
         self.active_player = None
         return None
 
+    # Fetch Media Player Lists
     def get_available_players(self):
         players = []
         try:
@@ -49,7 +50,7 @@ class MprisClient:
             pass
         return players
 
-
+    # Set Active Player (the first is default)
     def set_active_player(self, dbus_name):
         try:
             self.active_player_name = dbus_name
@@ -83,7 +84,7 @@ class MprisClient:
         except Exception as e:
             logging.error(f"Error command: {e}")
 
-
+    # Volume Control
     async def set_volume(self, level: int):
         await asyncio.to_thread(self._set_volume_sync, level)
 

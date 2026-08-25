@@ -14,10 +14,12 @@ from textual_image.widget import Image
 
 from mpris import MprisClient
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 
 class VolumeWidget(Widget):
-    """Volume display — scroll to change volume."""
+
+    """Volume Display Widget:
+        Change the volume between 0 and 100% with MouseScroll"""
 
 
     DEFAULT_CSS = """
@@ -50,6 +52,8 @@ class VolumeWidget(Widget):
 
 
 class MDCT(App):
+
+    # Frontend App for MDCT
 
     BINDINGS = [
         ("space", "bind_play_pause", "Play/Pause"),
@@ -207,7 +211,7 @@ class MDCT(App):
     """
 
 
-    # Initialize Widgets
+    # Initialize Widgets and Condition
     def __init__(self, fullscreen: bool = False, wide: bool = False):
         super().__init__()
         self.client = MprisClient()
@@ -229,60 +233,50 @@ class MDCT(App):
             self.album_art = Image(id='album_art')
             self.last_art_url = None
 
+    # Player Header: Compose Player Selector and Volume
+    def _player_header(self):
+        with Horizontal(id='select-player-wrapper'):
+            yield self.player_selector
+            yield self.volume_display
 
+    # Playback Panel: Compose Playback Controls
+    def _playback_panel(self):
+        yield self.song_info
+        yield self.artist_info
+        with Vertical(id='progress'):
+            yield self.progressbar
+            yield self.track_progress
+        with Horizontal(id='media-control'):
+            yield self.btn_prev
+            yield self.btn_seek_prev
+            yield self.btn_play
+            yield self.btn_seek_next
+            yield self.btn_next
 
-
-    # Compose All Widgets
+    # Compose all widgets in both default, full, and wide version
     def compose(self) -> ComposeResult:
-        # ── Wide layout: checked FIRST, then return ──
-        if self.is_wide:
-            with Horizontal(id='wide-root'):
-                with Vertical(id='wide-left'):
-                    with Horizontal(id='select-player-wrapper'):
-                        yield self.player_selector
-                        yield self.volume_display
+
+        if not self.is_wide:
+            with Vertical(id='main_panel'):
+                yield from self._player_header()
+                if self.is_fullscreen:
                     with Horizontal(id='art-container'):
                         yield self.album_art
-
+                    yield Footer()
+                yield from self._playback_panel()
+        else:
+            with Horizontal(id='wide-root'):
+                with Vertical(id='wide-left'):
+                    yield from self._player_header()
+                    with Horizontal(id='art-container'):
+                        yield self.album_art
                 with Vertical(id='wide-right'):
-                    yield self.song_info
-                    yield self.artist_info
-                    with Vertical(id='progress'):
-                        yield self.progressbar
-                        yield self.track_progress
-                    with Horizontal(id='media-control'):
-                        yield self.btn_prev
-                        yield self.btn_seek_prev
-                        yield self.btn_play
-                        yield self.btn_seek_next
-                        yield self.btn_next
+                    yield from self._playback_panel()
             yield Footer()
-            return  # ← stop here so main_panel is never composed in wide mode
-
-        # ── Default / fullscreen vertical layout ──
-        with Vertical(id='main_panel'):
-            with Horizontal(id='select-player-wrapper'):
-                yield self.player_selector
-                yield self.volume_display
-            if self.is_fullscreen:
-                with Horizontal(id='art-container'):
-                    yield self.album_art
-                yield Footer()
-
-            yield self.song_info
-            yield self.artist_info
-            with Vertical(id='progress'):
-                yield self.progressbar
-                yield self.track_progress
-            with Horizontal(id='media-control'):
-                yield self.btn_prev
-                yield self.btn_seek_prev
-                yield self.btn_play
-                yield self.btn_seek_next
-                yield self.btn_next
 
 
-    # Update the UI for 1 Hz
+
+
     async def on_mount(self):
 
         if self.is_wide:
@@ -290,14 +284,15 @@ class MDCT(App):
 
         await self.update_ui()
         await self._refresh_player_list()
-        self.set_interval(1, self.update_ui)
-        self.set_interval(5, self._refresh_player_list)
+        self.set_interval(1, self.update_ui) # Update UI/sec
+        self.set_interval(5, self._refresh_player_list) # Update Player List/5 secs
 
 
-    # Give the UI info from mpris.py backend
+
     async def update_ui(self):
         info = await self.client.get_current_info()
 
+        # Offline condition
         if info['status'] == "Offline":
 
             self.song_info.update("There's no currently running...")
@@ -310,6 +305,8 @@ class MDCT(App):
             if self.is_fullscreen or self.is_wide:
                 self.album_art.image = None
                 self.last_art_url = None
+
+        # Online condition
         else:
 
             self.song_info.update(f"{info['title']}")
@@ -346,11 +343,13 @@ class MDCT(App):
 
     async def _refresh_player_list(self):
         players = await asyncio.to_thread(self.client.get_available_players)
+        # Online Condition
         if players:
             self.player_selector.set_options(players)
             self.player_selector.disabled = False
             if self.client.active_player_name:
                 self.player_selector.value = self.client.active_player_name
+        # Offline condition
         else:
             self.player_selector.clear()
             self.player_selector.disabled = True
@@ -358,6 +357,14 @@ class MDCT(App):
 
 
     # Events Handler
+
+    @on(Select.Changed, "#select-player")
+    async def on_player_changed(self, event: Select.Changed):
+        if event.value is None or event.value is Select.NULL:
+            return
+        await asyncio.to_thread(self.client.set_active_player, event.value)
+        await self.update_ui()
+
     @on(Button.Pressed, "#btn-prev")
     async def btn_prev(self):
         await self.client.receive_command('b')
@@ -383,12 +390,6 @@ class MDCT(App):
         await self.client.seek_relative(10)
         await self.update_ui()
 
-    @on(Select.Changed, "#select-player")
-    async def on_player_changed(self, event: Select.Changed):
-        if event.value is None or event.value is Select.NULL:
-            return
-        await asyncio.to_thread(self.client.set_active_player, event.value)
-        await self.update_ui()
 
 
     async def volume_change(self, delta: int):
@@ -430,7 +431,7 @@ class MDCT(App):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog="mdct", description='TUI Media Control')
+    parser = argparse.ArgumentParser(prog="mdct", description=f"TUI Media Control {__version__}")
     parser.add_argument("-f", "--full", action="store_true", help="show full screen")
     parser.add_argument("-w", "--wide", action="store_true", help="side by side interface")
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
