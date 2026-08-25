@@ -93,8 +93,7 @@ else
   mkdir -p "$INSTALL_DIR"
 fi
 
-cp -r "$SCRIPT_DIR"/. "$INSTALL_DIR/"
-
+(cd "$SCRIPT_DIR" && tar -c --exclude='.git' --exclude='.idea' --exclude='.gitignore' .) | (cd "$INSTALL_DIR" && tar -x)
 
 cd "$INSTALL_DIR"
 
@@ -116,6 +115,11 @@ mkdir -p "$HOME/.local/bin"
 ln -sf "$INSTALL_DIR/dist/mdct" "$HOME/.local/bin/mdct"
 
 chmod +x "uninstall.sh"
+
+if ! "$INSTALL_DIR/dist/mdct" --version &>/dev/null; then
+    echo -e "${red}ERROR: Compiled binary failed to execute.${normal}"
+    exit 1
+fi
 
 if command -v mdct &> /dev/null; then
     echo -e "${green}Installation completed! Run mdct.${normal}"

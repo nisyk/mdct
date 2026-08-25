@@ -358,23 +358,26 @@ class MDCT(App):
 
 
     async def on_mount(self):
+        try:
+            if self.is_wide:
+                self.screen.add_class("wide")
 
-        if self.is_wide:
-            self.screen.add_class("wide")
+            # 1. Register custom themes from the YAML file
+                for theme in self.theme_config.get_custom_theme():
+                    self.register_theme(theme)
 
-        # 1. Register custom themes from the YAML file
-        for theme in self.theme_config.get_custom_theme():
-            self.register_theme(theme)
+                # 2. FIX: Get the active theme NAME (string), not the list of themes!
+                saved_theme_name = self.theme_config.get_active_theme()
+                if saved_theme_name and saved_theme_name in self.available_themes:
+                    self.theme = saved_theme_name
 
-        # 2. FIX: Get the active theme NAME (string), not the list of themes!
-        saved_theme_name = self.theme_config.get_active_theme()
-        if saved_theme_name and saved_theme_name in self.available_themes:
-            self.theme = saved_theme_name
+            await self.update_ui()
+            await self._refresh_player_list()
+            self.set_interval(1, self.update_ui) # Update UI/sec
+            self.set_interval(5, self._refresh_player_list) # Update Player List/5 secs
+        except Exception as e:
+            logging.error(f"Can't load UI: {e}")
 
-        await self.update_ui()
-        await self._refresh_player_list()
-        self.set_interval(1, self.update_ui) # Update UI/sec
-        self.set_interval(5, self._refresh_player_list) # Update Player List/5 secs
 
 
     async def update_ui(self):
@@ -383,7 +386,7 @@ class MDCT(App):
         # Offline condition
         if info['status'] == "Offline":
 
-            self.song_info.update("There's no currently running...")
+            self.song_info.update("There's no media player\ncurrently running...")
             self.volume_display.volume = 0
             self.artist_info.update(" ")
             self.progressbar.update(total=100, progress=0)
