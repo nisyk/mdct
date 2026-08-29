@@ -54,7 +54,7 @@ mdct
 | -v    | --version | output version information                         |
 | -h    | --help    | display this help and exit                         |
 
-> Note: You need a terminal with TGP (Terminal Graphics Protocol) for Kitty/Sixel protocol support to make album art visible, KGP protocol is recommended (kitty, Konsole). For more information, please check https://github.com/lnqs/textual-image (in this repo, KGP is mentioned as TGP).
+> Note: You need a terminal with TGP (Terminal Graphics Protocol) for Kitty/Sixel protocol support to make album art visible, Kitty TGP protocol is recommended (kitty). For more information, please check https://github.com/lnqs/textual-image and [Terminal Support](docs/terminal_support.md)
 
 ## Keybindings
 
@@ -67,3 +67,6 @@ mdct
 | l       | Seek next 10 secs |
 | q       | Quit application  |
 | SHIFT+p | Textual menu      |
+
+--- 
+Made by curious by **NISY**
