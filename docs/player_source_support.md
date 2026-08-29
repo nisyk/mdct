@@ -30,7 +30,7 @@ Note: Spotify (Native) isn't tested
 | Playback Control | ✅   |       |
 
 ## 🥉 Bronze
-### YouTube Music from peer-desktop (Native)
+### [YouTube Music from peer-devs (Native)](https://github.com/pear-devs/pear-desktop)
 | Parameter        | Y/N | Notes                                                                                                                                                                       |
 | ---------------- | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Album Art Image  | ✅   | Blurry images if the Shortcut (MPRIS) plugin is not activated in the app                                                                                                    |
