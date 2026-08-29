@@ -2,8 +2,11 @@ Date Written: 29 August 2026, Date Updated: 29 August 2029
 
 # mdct Terminal Support
 ## Brief
+
 Terminal support in mdct, especially for PIL Image, is not widely supported. Most terminals have issues displaying images. For now, I recommend [kitty](https://sw.kovidgoyal.net/kitty/) with [Nerd Fonts](https://www.nerdfonts.com/).
+
 ---
+
 ## 🥇 Gold
 ### kitty
 ![kitty](../assets/kitty.png)
