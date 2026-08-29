@@ -1,5 +1,5 @@
 # mdct
-A Textual-TUI-based Media Control with integration of MPRIS. Used in Terminal such as Kitty, KDE Konsole.
+A Textual-TUI-based Media Control with integration of MPRIS, used in terminals such as Kitty and KDE Konsole.
 
 ![Demo](assets/screenshot1.png)
 
@@ -7,22 +7,21 @@ A Textual-TUI-based Media Control with integration of MPRIS. Used in Terminal su
 
 ![Demo Wide Screen](assets/screenshot3.png)
 
-## Overview 
-mdct is based from Python with Textual TUI API to synchronize song metadatas from music player (such as: YouTube Music, Spotify, VLC, etc.) with integration of MPRIS dbus in Linux.
+## Overview
+mdct is based on Python with the Textual TUI API to synchronize song metadata from music players (such as YouTube Music, Spotify, VLC, etc.) with MPRIS dbus integration in Linux.
 
 ## Features
-- Run on Terminal: Can run on anywhere, as long it has terminal (e.g. Visual Studio Code, PyCharm, Zed, etc.)
-- Real-time sync: Sync metadatas such as artist, song title, album art, progress bar.
-- Album art: Gives rendered album art with PIL and KGP/Sixel protocols. (needs Terminal which supported one of both protocols, like Kitty, Konsole).
-- Lightweight: Use fewer resources than Electron UI.
-- Interactive buttons: Play, seek, skip, and previous buttons to gave command to music player.
+- Runs on terminal: Can run anywhere, as long as it has a terminal (e.g., Visual Studio Code, PyCharm, Zed, Dolphin, etc.)
+- Real-time sync: Sync metadata such as artist, song title, album art, and progress bar.
+- Album art: Gives rendered album art with PIL and KGP/Sixel protocols. (Requires a terminal that supports one of the two protocols, such as Kitty or Konsole.)
+- Lightweight: Uses fewer resources than Electron UI.
+- Interactive buttons: Play, seek, skip, and previous buttons to give commands to the music player.
 
 ## Requirements
-- A mainstream Linux distro (A distro with Cinnamon, GNOME, KDE, XFCE, Hyprland, Niri probably should work)
-	e.g: Ubuntu, Linux Mint, Debian, Fedora, Bazzite, CachyOS, etc.
+- Linux distro with dbus & MPRIS support (a mainstream desktop distro should work).
 - Python 3.10 or later with python3-dbus.
 - Terminal with mouse click support.
-- Terminal with KGP/Sixel protocol if want `--full` or `--wide` interface with album art.
+- Terminal with KGP/Sixel protocol if you want the `--full` or `--wide` interface with album art.
 
 ## Installation
 
@@ -33,7 +32,7 @@ chmod +x install.sh
 ./install.sh
 ```
 
-After the installation completed, run this command:
+After the installation completes, run this command:
 
 ```bash
 mdct -v
@@ -55,7 +54,7 @@ mdct
 | -v    | --version | output version information                         |
 | -h    | --help    | display this help and exit                         |
 
-> Note: You need terminal with TGP (Terminal Graphics Protocol) for Kitty/Sixel protocol support to make album art visible, KGP protocol is reccomended (kitty, Konsole). For more information, please check: https://github.com/lnqs/textual-image (in this repo, KGP mentioned as TGP).
+> Note: You need a terminal with TGP (Terminal Graphics Protocol) for Kitty/Sixel protocol support to make album art visible, KGP protocol is recommended (kitty, Konsole). For more information, please check https://github.com/lnqs/textual-image (in this repo, KGP is mentioned as TGP).
 
 ## Keybindings
 
@@ -68,7 +67,3 @@ mdct
 | l       | Seek next 10 secs |
 | q       | Quit application  |
 | SHIFT+p | Textual menu      |
-
-
----
-Made with curious by 🌆 **NISY**
